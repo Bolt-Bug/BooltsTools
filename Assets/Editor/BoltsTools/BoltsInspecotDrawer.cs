@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -508,6 +509,116 @@ public class BoltsShaderPropertyDrawer : PropertyDrawer
             return null;
 
         return parent.FindPropertyRelative(siblingName);
+    }
+}
+
+[CustomPropertyDrawer(typeof(BoltsSaveAttribute))]
+public class BoltsSaveAttributeDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        if (property.propertyType != SerializedPropertyType.String)
+        {
+            EditorGUI.HelpBox(position, "[SavedVariable] Only Works On Sting Fields", MessageType.Error);
+            return;
+        }
+
+        BoltsSaveAttribute bsa = (BoltsSaveAttribute)attribute;
+        List<string> names = GetVariableNames(bsa.filterType);
+
+        EditorGUI.BeginProperty(position, label, property);
+
+        Rect labelRect = new(position.x, position.y, EditorGUIUtility.labelWidth, position.height);
+        Rect buttonRect = new(position.x + EditorGUIUtility.labelWidth, position.y,
+            position.width - EditorGUIUtility.labelWidth, position.height);
+        
+        EditorGUI.LabelField(labelRect, label);
+
+        string current = property.stringValue;
+        string display = string.IsNullOrEmpty(current) ? "-- None --" : current;
+
+        if (EditorGUI.DropdownButton(buttonRect, new (display), FocusType.Keyboard))
+        {
+            GenericMenu menu = new();
+            
+            if(names.Count == 0)
+                menu.AddDisabledItem(new ("No Saved Variables Found"));
+            else
+            {
+                menu.AddItem(new ("-- None --"), string.IsNullOrEmpty(current), () =>
+                {
+                    property.stringValue = "";
+                    property.serializedObject.ApplyModifiedProperties();
+                });
+
+                foreach (string name in names)
+                {
+                    string captured = name;
+                    menu.AddItem(new(captured), current == captured, () =>
+                    {
+                        property.stringValue = captured;
+                        property.serializedObject.ApplyModifiedProperties();
+                    });
+                }
+            }
+            
+            menu.DropDown(buttonRect);
+        }
+        
+        EditorGUI.EndProperty();
+    }
+
+    List<string> GetVariableNames(SavedVariableType filter)
+    {
+        List<string> names = new();
+
+        SavingConfigAsset settings = BoltsSave._settings;
+
+        if (settings == null)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:SavingConfigAsset");
+            if (guids.Length == 0)
+                return names;
+
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            settings = AssetDatabase.LoadAssetAtPath<SavingConfigAsset>(path);
+        }
+
+        if (settings == null)
+            return names;
+
+        string fullPath = settings.GetFullPath();
+
+        if (!File.Exists(fullPath))
+            return names;
+
+        string json = File.ReadAllText(fullPath);
+        SaveData sd = JsonUtility.FromJson<SaveData>(json);
+
+        if (sd == null)
+            return names;
+        
+        if((filter == SavedVariableType.Any || filter == SavedVariableType.Float) && sd.floats != null)
+            foreach(var item in sd.floats)
+                names.Add(item.name);
+        
+        if((filter == SavedVariableType.Any || filter == SavedVariableType.Int) && sd.ints != null)
+            foreach(var item in sd.ints)
+                names.Add(item.name);
+        
+        if((filter == SavedVariableType.Any || filter == SavedVariableType.Bool) && sd.bools != null)
+            foreach(var item in sd.bools)
+                names.Add(item.name);
+        
+        if((filter == SavedVariableType.Any || filter == SavedVariableType.String) && sd.strings != null)
+            foreach(var item in sd.strings)
+                names.Add(item.name);
+        
+        if((filter == SavedVariableType.Any || filter == SavedVariableType.Class) && sd.classes != null)
+            foreach (var item in sd.classes)
+                names.Add(item.name);
+
+        return names;
     }
 }
 

@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 public class BoltsSavingWindow : EditorWindow
@@ -12,14 +12,17 @@ public class BoltsSavingWindow : EditorWindow
 
     string jsonFilePath;
     SaveData sd;
-    string selectedValue = "Select a value...";
+    const string ConfigPath = "Assets/BoltsTools/SaveSettings.savecfg";
 
-    private const string CONFIG_PATH = "Assets/BoltsTools/SaveSettings.savecfg";
+    private static Rect pos;
 
     [MenuItem("Tools/Bolts Tools/Save Settings")]
     static void ShowWindow()
     {
-        GetWindow<BoltsSavingWindow>("Save Settings Window");
+        BoltsSavingWindow window = GetWindow<BoltsSavingWindow>(true,"Save Settings Window", true);
+        
+        window.minSize = new(400, 400);
+        window.maxSize = new(400, 400);
     }
 
     void OnEnable()
@@ -29,7 +32,7 @@ public class BoltsSavingWindow : EditorWindow
 
     void LoadConfig()
     {
-        config = AssetDatabase.LoadAssetAtPath<SavingConfigAsset>(CONFIG_PATH);
+        config = AssetDatabase.LoadAssetAtPath<SavingConfigAsset>(ConfigPath);
 
         if (config != null)
         {
@@ -39,10 +42,10 @@ public class BoltsSavingWindow : EditorWindow
         {
             Debug.Log("Could Not Find Settings... Making One");
 
-            SavingConfigAsset newFile = new SavingConfigAsset();
-            AssetDatabase.CreateAsset(newFile, CONFIG_PATH);
+            SavingConfigAsset newFile = new();
+            AssetDatabase.CreateAsset(newFile, ConfigPath);
 
-            serializedConfig = new(AssetDatabase.LoadAssetAtPath<SavingConfigAsset>(CONFIG_PATH));
+            serializedConfig = new(AssetDatabase.LoadAssetAtPath<SavingConfigAsset>(ConfigPath));
         }
     }
 
@@ -51,9 +54,11 @@ public class BoltsSavingWindow : EditorWindow
         EditorGUILayout.LabelField("Save Settings", EditorStyles.boldLabel);
         EditorGUILayout.Space();
 
+        pos = position;
+        
         if (config == null)
         {
-            EditorGUILayout.HelpBox($"Config file not found at:\n{CONFIG_PATH}", MessageType.Error);
+            EditorGUILayout.HelpBox($"Config file not found at:\n{ConfigPath}", MessageType.Error);
 
             if (GUILayout.Button("Reload"))
             {
@@ -164,7 +169,7 @@ public class BoltsSavingWindow : EditorWindow
     {
         bool needSave = false;
 
-        if (sd.floats != null && sd.floats.Count > 0)
+        if (sd.floats is { Count: > 0 })
         {
                 EditorGUILayout.LabelField("Floats:", EditorStyles.boldLabel);
                 for (int i = 0; i < sd.floats.Count; i++)
@@ -184,7 +189,7 @@ public class BoltsSavingWindow : EditorWindow
         }
 
             // Display and edit Ints
-        if (sd.ints != null && sd.ints.Count > 0)
+        if (sd.ints is { Count: > 0 })
         {
             EditorGUILayout.LabelField("Ints:", EditorStyles.boldLabel);
                 for (int i = 0; i < sd.ints.Count; i++)
@@ -201,87 +206,78 @@ public class BoltsSavingWindow : EditorWindow
                     EditorGUILayout.EndHorizontal();
                 }
                 EditorGUILayout.Space(5);
-            }
+        }
 
-            // Display and edit Strings
-            if (sd.strings != null && sd.strings.Count > 0)
+        // Display and edit Strings
+        if (sd.strings is { Count: > 0 })
+        {
+            EditorGUILayout.LabelField("Strings:", EditorStyles.boldLabel);
+            for (int i = 0; i < sd.strings.Count; i++)
             {
-                EditorGUILayout.LabelField("Strings:", EditorStyles.boldLabel);
-                for (int i = 0; i < sd.strings.Count; i++)
+                EditorGUILayout.BeginHorizontal();
+                sd.strings[i].name = EditorGUILayout.TextField(sd.strings[i].name, GUILayout.Width(150));
+                sd.strings[i].value = EditorGUILayout.TextField(sd.strings[i].value);
+
+                if (GUILayout.Button("X", GUILayout.Width(25)))
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    sd.strings[i].name = EditorGUILayout.TextField(sd.strings[i].name, GUILayout.Width(150));
-                    sd.strings[i].value = EditorGUILayout.TextField(sd.strings[i].value);
-
-                    if (GUILayout.Button("X", GUILayout.Width(25)))
-                    {
-                        sd.strings.RemoveAt(i);
-                        needSave = true;
-                    }
-                    EditorGUILayout.EndHorizontal();
+                    sd.strings.RemoveAt(i);
+                    needSave = true;
                 }
-                EditorGUILayout.Space(5);
+                EditorGUILayout.EndHorizontal();
             }
+            EditorGUILayout.Space(5);
+        }
 
-            // Display and edit Bools
-            if (sd.bools != null && sd.bools.Count > 0)
+        // Display and edit Bools
+        if (sd.bools is { Count: > 0 })
+        {
+            EditorGUILayout.LabelField("Bools:", EditorStyles.boldLabel);
+            for (int i = 0; i < sd.bools.Count; i++)
             {
-                EditorGUILayout.LabelField("Bools:", EditorStyles.boldLabel);
-                for (int i = 0; i < sd.bools.Count; i++)
+                EditorGUILayout.BeginHorizontal();
+                sd.bools[i].name = EditorGUILayout.TextField(sd.bools[i].name, GUILayout.Width(150));
+                sd.bools[i].value = EditorGUILayout.Toggle(sd.bools[i].value);
+
+                if (GUILayout.Button("X", GUILayout.Width(25)))
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    sd.bools[i].name = EditorGUILayout.TextField(sd.bools[i].name, GUILayout.Width(150));
-                    sd.bools[i].value = EditorGUILayout.Toggle(sd.bools[i].value);
-
-                    if (GUILayout.Button("X", GUILayout.Width(25)))
-                    {
-                        sd.bools.RemoveAt(i);
-                        needSave = true;
-                    }
-                    EditorGUILayout.EndHorizontal();
+                    sd.bools.RemoveAt(i);
+                    needSave = true;
                 }
-                EditorGUILayout.Space(5);
+                EditorGUILayout.EndHorizontal();
             }
+            EditorGUILayout.Space(5);
+        }
 
-            // Display Classes (read-only for now)
-            if (sd.classes != null && sd.classes.Count > 0)
+        // Display Classes (read-only for now)
+        if (sd.classes is { Count: > 0 })
 
+        {
+            EditorGUILayout.LabelField("Classes:", EditorStyles.boldLabel);
+            for (int i = 0; i < sd.classes.Count; i++)
             {
-                EditorGUILayout.LabelField("Classes:", EditorStyles.boldLabel);
-                for (int i = 0; i < sd.classes.Count; i++)
+                EditorGUILayout.BeginHorizontal();
+                sd.classes[i].name = EditorGUILayout.TextField(sd.classes[i].name, GUILayout.Width(150));
+                EditorGUILayout.TextField(sd.classes[i].value);
+
+                if (GUILayout.Button("X", GUILayout.Width(25)))
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    sd.classes[i].name = EditorGUILayout.TextField(sd.classes[i].name, GUILayout.Width(150));
-                    EditorGUILayout.TextField(sd.classes[i].value);
-
-                    if (GUILayout.Button("X", GUILayout.Width(25)))
-                    {
-                        sd.classes.RemoveAt(i);
-                        needSave = true;
-                    }
-                    EditorGUILayout.EndHorizontal();
+                    sd.classes.RemoveAt(i);
+                    needSave = true;
                 }
-                EditorGUILayout.Space(5);
+                EditorGUILayout.EndHorizontal();
             }
+            EditorGUILayout.Space(5);
+        }
 
-            if (needSave)
-            {
-                BoltsSave.SaveFile(sd);
-                Repaint();
-            }
+        if (needSave)
+        {
+            BoltsSave.SaveFile(sd);
+            Repaint();
+        }
     }
 
     void OnDestroy()
     {
         BoltsSave.SaveFile(sd);
-    }
-}
-
-public class saveTest
-{
-    [MenuItem("Tools/TestSave")]
-    public static void TestSave()
-    {
-        BoltsSave.SaveStringValue("this is a test", "This test is a string");
     }
 }

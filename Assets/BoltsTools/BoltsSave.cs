@@ -33,7 +33,9 @@ public class BoltsSave
 
         SaveFloat sf = new() { name = name, value = value };
 
-        int index = sd.floats.FindIndex(x => x.name == name);
+        int index = -1;
+        if(sd.floats != null)
+            index = sd.floats.FindIndex(x => x.name == name);
 
         if (index > -1)
             sd.floats[index].value = value;
@@ -56,7 +58,9 @@ public class BoltsSave
 
         SaveInt si = new() { name = name, value = value };
 
-        int index = sd.ints.FindIndex(x => x.name == name);
+        int index = -1;
+        if(sd.ints != null)
+            index = sd.ints.FindIndex(x => x.name == name);
 
         if (index > -1)
             sd.ints[index].value = value;
@@ -79,7 +83,9 @@ public class BoltsSave
 
         SaveString ss = new() { name = name, value = value };
 
-        int index = sd.strings.FindIndex(x => x.name == name);
+        int index = -1;
+        if(sd.strings != null)
+            index = sd.strings.FindIndex(x => x.name == name);
 
         if (index > -1)
             sd.strings[index].value = value;
@@ -102,7 +108,10 @@ public class BoltsSave
 
         SaveBool sb = new() { name = name, value = value };
 
-        int index = sd.bools.FindIndex(x => x.name == name);
+        int index = -1;
+        if(sd.bools != null)
+            index = sd.bools.FindIndex(x => x.name == name);
+        
         if (index > -1)
             sd.bools[index].value = value;
         else
@@ -124,7 +133,11 @@ public class BoltsSave
 
         SaveClass sc = new SaveClass() { name = name, value = JsonUtility.ToJson(classInstance) };
 
-        int index = sd.classes.FindIndex(x => x.name == name);
+        int index = -1;
+        
+        if(sd.classes != null)
+            index = sd.classes.FindIndex(x => x.name == name);
+        
         if (index > -1)
             sd.classes[index].value = JsonUtility.ToJson(classInstance);
         else
@@ -268,7 +281,7 @@ public class BoltsSave
 
         if (!File.Exists(fullPath))
         {
-            string newJsonFile = JsonUtility.ToJson(new SaveData(), _settings.useEncryption);
+            string newJsonFile = JsonUtility.ToJson(sd, _settings.useEncryption);
             File.WriteAllText(fullPath, newJsonFile);
         }
 
