@@ -14,8 +14,6 @@ public class BoltsSavingWindow : EditorWindow
     SaveData sd;
     const string ConfigPath = "Assets/BoltsTools/SaveSettings.savecfg";
 
-    private static Rect pos;
-
     [MenuItem("Tools/Bolts Tools/Save Settings")]
     static void ShowWindow()
     {
@@ -53,8 +51,6 @@ public class BoltsSavingWindow : EditorWindow
     {
         EditorGUILayout.LabelField("Save Settings", EditorStyles.boldLabel);
         EditorGUILayout.Space();
-
-        pos = position;
         
         if (config == null)
         {
@@ -278,6 +274,7 @@ public class BoltsSavingWindow : EditorWindow
 
     void OnDestroy()
     {
-        BoltsSave.SaveFile(sd);
+        if(sd != null)
+            BoltsSave.SaveFile(sd);
     }
 }

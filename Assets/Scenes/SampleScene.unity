@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fa0562080788004496eeece2a01e4d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testSaeThing: Saved String
+  saveString: Saved String
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
